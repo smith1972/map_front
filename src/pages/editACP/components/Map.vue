@@ -7,13 +7,14 @@
 </template>
 
 <script>
+    import $ from 'jquery'
     import 'ol/ol.css';
     import {Map, View} from 'ol';
     import TileLayer from 'ol/layer/Tile';
     import XYZ from 'ol/source/XYZ';
     import {fromLonLat, toLonLat} from "ol/proj";
     import Icon from 'ol/style/Icon';
-    import iconPit from '@/assets/pit.png';
+    import iconPlant from '@/assets/plant.png';
     import VectorLayer from 'ol/layer/Vector';
     import VectorSource from 'ol/source/Vector';
     import Style from 'ol/style/Style';
@@ -49,7 +50,7 @@
               anchor: [0.5, 46],
               anchorXUnits: 'fraction',
               anchorYUnits: 'pixels',
-              src: iconPit
+              src: iconPlant
             })
           })
 
@@ -127,7 +128,23 @@
             if (!(geometry instanceof Point)) return;
 
             let coordinates = geometry.getCoordinates();
-            console.log(toLonLat(coordinates))
+            let lonlat = toLonLat(coordinates)
+
+            $.ajax(process.env.VUE_APP_API_URL + 'plant/update', {
+              dataType: 'json',
+              method: 'POST',
+              mode: "no-cors",
+              data: {
+                lon: lonlat[0],
+                lat: lonlat[1],
+                ext_id: 24
+              }
+            }).done(function (data) {
+              console.log(data);
+            }).fail(function (data) {
+              console.log('Oшибка получения данных: ' + data);
+            });
+
           })
 
           this.map = map;

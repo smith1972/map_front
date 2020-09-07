@@ -7,12 +7,12 @@ module.exports = {
             title: 'Index Page',
             chunks: ['chunk-vendors', 'chunk-common', 'index']
         },
-        edit: {
-            entry: 'src/pages/edit/main.js',
+        editACP: {
+            entry: 'src/pages/editACP/main.js',
             template: 'public/index.html',
-            filename: 'edit.html',
+            filename: 'editACP.html',
             title: 'Редактирование объектов',
-            chunks: ['chunk-vendors', 'chunk-common', 'edit']
+            chunks: ['chunk-vendors', 'chunk-common', 'editACP']
         },
     }
 }
