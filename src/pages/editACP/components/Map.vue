@@ -7,7 +7,6 @@
 </template>
 
 <script>
-    import $ from 'jquery'
     import 'ol/ol.css';
     import {Map, View} from 'ol';
     import TileLayer from 'ol/layer/Tile';
@@ -42,8 +41,19 @@
                 tooltipShow: false,
             }
         },
+        methods: {
+          nameSelect: function (data){
+            let feature = this.source.getFeatureById(data.feature)
+            if (data.ext_id < 0){
+              this.source.removeFeature(feature)
+            }else{
+              feature.setId(data.id)
+            }
+          }
+        },
         mounted() {
           let features = [];
+          let $this = this;
 
           this.styles = new Style({
             image: new Icon({
@@ -56,6 +66,7 @@
 
           features.push(
               new Feature({
+                id: 34,
                 name: 'АБЗ 1',
                 geometry: new Point(fromLonLat([28.2, 54])),
                 style: this.styles
@@ -63,6 +74,7 @@
           )
           features.push(
               new Feature({
+                id: 38,
                 name: 'АБЗ 2',
                 geometry: new Point(fromLonLat([29.2, 54])),
                 style: this.styles
@@ -71,6 +83,7 @@
 
           features.push(
               new Feature({
+                id: 66,
                 name: 'АБЗ 3',
                 geometry: new Point(fromLonLat([28.2, 55])),
                 style: this.styles
@@ -79,6 +92,7 @@
 
           features.push(
               new Feature({
+                id: 89,
                 name: 'АБЗ 4',
                 geometry: new Point(fromLonLat([28.2, 53])),
                 style: this.styles
@@ -91,26 +105,27 @@
                 zoom: 14
             })
 
-            this.source = new VectorSource({
-              features: features
-            });
-            this.vector = new VectorLayer({
-                source: this.source,
-                style: this.styles
-            })
+          this.source = new VectorSource({
+            features: features
+          });
 
-            let map = new Map({
-                target: 'map',
-                layers: [
-                    new TileLayer({
-                        source: new XYZ({
-                            url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                        })
-                    }),
-                    this.vector
-                ],
-                view: this.view
-            });
+          this.vector = new VectorLayer({
+              source: this.source,
+              style: this.styles
+          })
+
+          let map = new Map({
+              target: 'map',
+              layers: [
+                  new TileLayer({
+                      source: new XYZ({
+                          url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                      })
+                  }),
+                  this.vector
+              ],
+              view: this.view
+          });
 
           let modify = new Modify({source: this.source});
           map.addInteraction(modify);
@@ -127,24 +142,17 @@
             let geometry = e.feature.getGeometry();
             if (!(geometry instanceof Point)) return;
 
+            e.feature.setId(999999)
             let coordinates = geometry.getCoordinates();
             let lonlat = toLonLat(coordinates)
 
-            $.ajax(process.env.VUE_APP_API_URL + 'plant/update', {
-              dataType: 'json',
-              method: 'POST',
-              mode: "no-cors",
-              data: {
-                lon: lonlat[0],
-                lat: lonlat[1],
-                ext_id: 24
-              }
-            }).done(function (data) {
-              console.log(data);
-            }).fail(function (data) {
-              console.log('Oшибка получения данных: ' + data);
-            });
-
+            $this.$emit('showBindName',
+                {
+                  lon: lonlat[0],
+                  lat: lonlat[1],
+                  feature: e.feature.getId()
+                }
+            )
           })
 
           this.map = map;
