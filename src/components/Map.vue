@@ -19,6 +19,7 @@
     import {Stroke, Style, Circle as CircleStyle, Fill} from 'ol/style';
     import Feature from 'ol/Feature';
     import Tooltip from "./Tooltip";
+    import $ from "jquery";
 
     export default {
         name: 'Map',
@@ -67,8 +68,60 @@
 
                     })
             },
-            filter: function (data) {
-                fetch(process.env.VUE_APP_API_URL + '/get.php?do=milestones&ref=' + data.highway)
+            filter: function (data){
+              let $this = this,
+                  highway = data.highway
+              ;
+              $.ajax(process.env.VUE_APP_API_URL + 'road/' + highway + '/points', {
+                dataType: 'json',
+                method: 'GET',
+                mode: "no-cors",
+              }).done(function (data) {
+                let points = data.data,
+                    features = [],
+                    i, j,
+                    lat = parseFloat(points[0][0][1]),
+                    lon = parseFloat(points[0][0][0])
+                console.log(points)
+                for (i = 0; i < points.length; i++){
+                  for (j = 0; j < points[i].length - 1; j++) {
+                    features.push(
+                        new Feature({
+                          name: highway,
+                          geometry: new LineString(
+                              [
+                                fromLonLat(points[i][j]),
+                                fromLonLat(points[i][j + 1])
+                              ]
+                          )
+                        })
+                    )
+                  }
+                }
+                i--;
+                lat = (lat + parseFloat(points[i][j][1])) / 2;
+                lon = (lon + parseFloat(points[i][j][0])) / 2;
+
+                if ($this.highwayLayer != null) $this.map.removeLayer($this.highwayLayer)
+
+                $this.highwayLayer = new VectorLayer({
+                  source: new VectorSource({
+                    features: features
+                  }),
+                  style: $this.styleLayer
+                })
+
+                $this.map.addLayer($this.highwayLayer)
+                $this.view.setCenter(fromLonLat([lon, lat]))
+
+              }).fail(function (data) {
+                console.log('Oшибка получения данных: ' + data);
+              });
+
+            },
+            filter5: function (data) {
+
+              fetch(process.env.VUE_APP_API_URL + '/get.php?do=milestones&ref=' + data.highway)
                     .then(r => r.json())
                     .then(json => {
 

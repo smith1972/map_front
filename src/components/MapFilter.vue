@@ -5,25 +5,27 @@
           <option v-for="(highway, index) in highways" :key="index" :value="highway">{{ highway }}</option>
         </select>
       </div>
-      <div class="col-2">
+      <!--<div class="col-2">
         <button class="btn btn-info" @click="buttonClick">Click</button>
-      </div>
+      </div>-->
 
     </div>
 </template>
 
 <script>
+    import $ from "jquery";
+
     export default {
         name: 'MapFilter',
         data: function () {
             return {
-                highways: ['M1', 'M2', 'M3']
+                highways: []
             }
         },
         methods: {
             highwaySelect: function (e) {
                 this.$emit('filterOut', {
-                    highway: e.target.value
+                  highway: e.target.value
                 })
             },
             buttonClick: function () {
@@ -31,11 +33,17 @@
             }
         },
         mounted() {
-            fetch(process.env.VUE_APP_API_URL + '/get.php?do=names')
-                .then(r => r.json())
-                .then(json => {
-                    this.highways = json
-                })
+          let $this = this
+          $.ajax(process.env.VUE_APP_API_URL + 'road/list', {
+            dataType: 'json',
+            method: 'GET',
+            mode: "no-cors",
+          }).done(function (data) {
+            $this.highways = data.data
+          }).fail(function (data) {
+            console.log('Oшибка получения данных: ' + data);
+          });
+
         }
     }
 </script>

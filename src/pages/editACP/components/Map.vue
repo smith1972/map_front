@@ -21,6 +21,7 @@
     import Point from "ol/geom/Point";
     import Feature from 'ol/Feature'
     import {Draw, Modify, Snap} from 'ol/interaction';
+    import $ from "jquery";
 
     export default {
         name: 'Map',
@@ -52,7 +53,6 @@
           }
         },
         mounted() {
-          let features = [];
           let $this = this;
 
           this.styles = new Style({
@@ -64,50 +64,17 @@
             })
           })
 
-          features.push(
-              new Feature({
-                id: 34,
-                name: 'АБЗ 1',
-                geometry: new Point(fromLonLat([28.2, 54])),
-                style: this.styles
-              })
-          )
-          features.push(
-              new Feature({
-                id: 38,
-                name: 'АБЗ 2',
-                geometry: new Point(fromLonLat([29.2, 54])),
-                style: this.styles
-              })
-          )
-
-          features.push(
-              new Feature({
-                id: 66,
-                name: 'АБЗ 3',
-                geometry: new Point(fromLonLat([28.2, 55])),
-                style: this.styles
-              })
-          )
-
-          features.push(
-              new Feature({
-                id: 89,
-                name: 'АБЗ 4',
-                geometry: new Point(fromLonLat([28.2, 53])),
-                style: this.styles
-              })
-          )
-
-
           this.view = new View({
                 center: fromLonLat([28.2, 54]),
                 zoom: 14
             })
-
+          /*
           this.source = new VectorSource({
             features: features
           });
+          */
+          this.source = new VectorSource({});
+
 
           this.vector = new VectorLayer({
               source: this.source,
@@ -156,6 +123,29 @@
           })
 
           this.map = map;
+
+          $.ajax(process.env.VUE_APP_API_URL + 'plant/list', {
+            dataType: 'json',
+            method: 'GET',
+            mode: "no-cors",
+          }).done(function (data) {
+            if (data.data.length == 0) return;
+            let plants = data.data;
+            let i;
+            for (i = 0; i < plants.length; i++){
+              $this.source.addFeature(
+                  new Feature({
+                    id: plants[i].id,
+                    name: plants[i].name,
+                    geometry: new Point(fromLonLat([plants[i].lon, plants[i].lat])),
+                    style: $this.styles
+                  })
+              )
+            }
+          }).fail(function (data) {
+            console.log('Oшибка получения данных: ' + data);
+          });
+
         }
     }
 </script>

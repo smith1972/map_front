@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div id="app">
-      <MapFilter @filterOut="mapFilter" @buttonClick="buttonClick" />
+      <!--<MapFilter @filterOut="mapFilter" @buttonClick="buttonClick" />-->
       <Map ref="Map" @showBindName="showBindName"  />
       <BindName ref="BindName" @plantNameSelect="plantNameSelect" />
     </div>
@@ -11,7 +11,7 @@
 <script>
 
 import $ from 'jquery'
-import MapFilter from './components/MapFilter.vue'
+//import MapFilter from './components/MapFilter.vue'
 import Map from './components/Map.vue'
 import BindName from "@/pages/editACP/components/BindName";
 
@@ -28,7 +28,6 @@ export default {
   },
   components: {
     BindName,
-    MapFilter,
     Map
   },
   methods: {
