@@ -1,7 +1,7 @@
 <template>
   <div class="row">
     <div id="map" class="col-12">
-      <tooltip :vals="tooltipData" v-show="tooltipShow">{{ tooltipMessage }}</tooltip>
+      <tooltip :vals="tooltipData" v-show="tooltipShow" />
     </div>
   </div>
 </template>
@@ -35,10 +35,10 @@
                 styleMilestone: null,
                 tooltipData: {
                     title: '',
+                    message: '',
                     top: 200,
                     left: 100,
                 },
-                tooltipMessage: '',
                 tooltipShow: false,
             }
         },
@@ -80,18 +80,19 @@
                 let points = data.data,
                     features = [],
                     i, j,
-                    lat = parseFloat(points[0][0][1]),
-                    lon = parseFloat(points[0][0][0])
-                console.log(points)
+                    lat = parseFloat(points[0].nodes[0][1]),
+                    lon = parseFloat(points[0].nodes[0][0])
+
                 for (i = 0; i < points.length; i++){
-                  for (j = 0; j < points[i].length - 1; j++) {
+                  for (j = 0; j < points[i].nodes.length - 1; j++) {
                     features.push(
                         new Feature({
-                          name: highway,
+                          title: highway + '   ' + i + ':' + j,
+                          name: points[i].name,
                           geometry: new LineString(
                               [
-                                fromLonLat(points[i][j]),
-                                fromLonLat(points[i][j + 1])
+                                fromLonLat(points[i].nodes[j]),
+                                fromLonLat(points[i].nodes[j + 1])
                               ]
                           )
                         })
@@ -99,8 +100,8 @@
                   }
                 }
                 i--;
-                lat = (lat + parseFloat(points[i][j][1])) / 2;
-                lon = (lon + parseFloat(points[i][j][0])) / 2;
+                lat = (lat + parseFloat(points[i].nodes[j][1])) / 2;
+                lon = (lon + parseFloat(points[i].nodes[j][0])) / 2;
 
                 if ($this.highwayLayer != null) $this.map.removeLayer($this.highwayLayer)
 
@@ -227,9 +228,9 @@
                     return feature;
                 });
                 if (feature) {
-                    thisComponent.tooltipMessage = feature.get('name')
                     thisComponent.tooltipData = {
-                        title: '',
+                        title: feature.get('title'),
+                        message: feature.get('name'),
                         left: pixel[0],
                         top: pixel[1] - 30
                     }

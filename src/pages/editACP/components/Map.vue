@@ -1,7 +1,7 @@
 <template>
   <div class="row">
     <div id="map" class="col-12">
-      <tooltip :vals="tooltipData" v-show="tooltipShow">{{ tooltipMessage }}</tooltip>
+      <tooltip :vals="tooltipData" v-show="tooltipShow" />
     </div>
   </div>
 </template>
@@ -17,7 +17,7 @@
     import VectorLayer from 'ol/layer/Vector';
     import VectorSource from 'ol/source/Vector';
     import Style from 'ol/style/Style';
-    import Tooltip from "./Tooltip";
+    import Tooltip from "@/components/Tooltip";
     import Point from "ol/geom/Point";
     import Feature from 'ol/Feature'
     import {Draw, Modify, Snap} from 'ol/interaction';
@@ -68,11 +68,6 @@
                 center: fromLonLat([28.2, 54]),
                 zoom: 14
             })
-          /*
-          this.source = new VectorSource({
-            features: features
-          });
-          */
           this.source = new VectorSource({});
 
 
@@ -121,6 +116,39 @@
                 }
             )
           })
+
+          let displayFeatureInfo = function(pixel) {
+            let feature = map.forEachFeatureAtPixel(pixel, function(feature) {
+              return feature;
+            });
+            if (feature instanceof Feature) {
+              if ($this.tooltipMessage != undefined){
+                $this.tooltipData = {
+                  title: '',
+                  message: feature.get('name'),
+                  left: pixel[0],
+                  top: pixel[1] - 30
+                }
+                $this.tooltipShow = true
+              }else{
+                $this.tooltipShow = false
+              }
+
+            }else{
+              $this.tooltipShow = false
+            }
+          };
+
+          map.on('pointermove', function(evt) {
+            if (evt.dragging) {
+              return;
+            }
+            displayFeatureInfo(map.getEventPixel(evt.originalEvent));
+          });
+
+          map.on('click', function(evt) {
+            displayFeatureInfo(evt.pixel);
+          });
 
           this.map = map;
 

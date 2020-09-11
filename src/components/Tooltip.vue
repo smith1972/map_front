@@ -5,9 +5,7 @@
                 <div class="title">
                     {{ vals.title }}
                 </div>
-                <div class="text">
-                    <slot>Tooltip text</slot>
-                </div>
+                <div class="text" v-html="vals.message"></div>
             </div>
         </div>
     </div>
