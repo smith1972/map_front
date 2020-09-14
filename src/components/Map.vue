@@ -43,149 +43,82 @@
             }
         },
         methods: {
-            pointers: function (){
-                fetch(process.env.VUE_APP_API_URL + '/points.php')
-                    .then(r => r.json())
-                    .then(json => {
-                        let features = []
+            viewMilestonesLayer : function (milestones){
+              let features = [];
+              milestones.forEach(function (el) {
+                features.push(new Feature({
+                  id: el.n,
+                  name: el.n + ' км',
+                  type: 'millestone',
+                  geometry: new Point(fromLonLat(el.p))
+                }))
+              })
 
-                        json.forEach(function (el) {
-                            features.push(new Feature({
-                                name: el.id,
-                                type: 'geoMarker',
-                                geometry: new Point(fromLonLat(el.p))
-                            }))
-                        })
+              if (this.milestoneLayer != null) this.map.removeLayer(this.milestoneLayer)
+              this.milestoneLayer = new VectorLayer({
+                source: new VectorSource({
+                  features: features
+                }),
+                style: this.styleMilestone
+              })
+              this.map.addLayer(this.milestoneLayer)
+            },
+            viewHighwayLayer: function (highwayData, points){
+              let features = [],
+                  i, j,
+                  lat = parseFloat(points[0].nodes[0][1]),
+                  lon = parseFloat(points[0].nodes[0][0])
 
-                        if (this.pointsLayer != null) this.map.removeLayer(this.pointsLayer)
-                        this.pointsLayer = new VectorLayer({
-                            source: new VectorSource({
-                                features: features
-                            }),
-                            style: this.styleMilestone
-                        })
-                        this.map.addLayer(this.pointsLayer)
+              for (i = 0; i < points.length; i++){
+                for (j = 0; j < points[i].nodes.length - 1; j++) {
+                  features.push(
+                      new Feature({
+                        title: highwayData.name + '   ' + i + ':' + j,
+                        name: points[i].tags.name,
+                        type: 'road',
+                        geometry: new LineString(
+                            [
+                              fromLonLat(points[i].nodes[j]),
+                              fromLonLat(points[i].nodes[j + 1])
+                            ]
+                        )
+                      })
+                  )
+                }
+              }
+              i--;
+              lat = (lat + parseFloat(points[i].nodes[j][1])) / 2;
+              lon = (lon + parseFloat(points[i].nodes[j][0])) / 2;
 
-                    })
+              if (this.highwayLayer != null) this.map.removeLayer(this.highwayLayer)
+
+              this.highwayLayer = new VectorLayer({
+                source: new VectorSource({
+                  features: features
+                }),
+                style: this.styleLayer
+              })
+
+              this.map.addLayer(this.highwayLayer)
+              this.view.setCenter(fromLonLat([lon, lat]))
             },
             filter: function (data){
-              let $this = this,
-                  highway = data.highway
-              ;
-              $.ajax(process.env.VUE_APP_API_URL + 'road/' + highway + '/points', {
+              let $this = this;
+              $.ajax(process.env.VUE_APP_API_URL + 'road/' + data.highway + '/points', {
                 dataType: 'json',
                 method: 'GET',
                 mode: "no-cors",
               }).done(function (data) {
-                let points = data.data,
-                    features = [],
-                    i, j,
-                    lat = parseFloat(points[0].nodes[0][1]),
-                    lon = parseFloat(points[0].nodes[0][0])
 
-                for (i = 0; i < points.length; i++){
-                  for (j = 0; j < points[i].nodes.length - 1; j++) {
-                    features.push(
-                        new Feature({
-                          title: highway + '   ' + i + ':' + j,
-                          name: points[i].name,
-                          geometry: new LineString(
-                              [
-                                fromLonLat(points[i].nodes[j]),
-                                fromLonLat(points[i].nodes[j + 1])
-                              ]
-                          )
-                        })
-                    )
-                  }
-                }
-                i--;
-                lat = (lat + parseFloat(points[i].nodes[j][1])) / 2;
-                lon = (lon + parseFloat(points[i].nodes[j][0])) / 2;
+                $this.viewHighwayLayer(data.data.highway, data.data.road)
+                $this.viewMilestonesLayer(data.data.milestones)
 
-                if ($this.highwayLayer != null) $this.map.removeLayer($this.highwayLayer)
-
-                $this.highwayLayer = new VectorLayer({
-                  source: new VectorSource({
-                    features: features
-                  }),
-                  style: $this.styleLayer
-                })
-
-                $this.map.addLayer($this.highwayLayer)
-                $this.view.setCenter(fromLonLat([lon, lat]))
 
               }).fail(function (data) {
                 console.log('Oшибка получения данных: ' + data);
               });
 
-            },
-            filter5: function (data) {
-
-              fetch(process.env.VUE_APP_API_URL + '/get.php?do=milestones&ref=' + data.highway)
-                    .then(r => r.json())
-                    .then(json => {
-
-                        let features = [],
-                            i, j,
-                            ways = json['ways'],
-                            milestones = json['milestones'],
-                            lat = parseFloat(ways[0][0][1]),
-                            lon = parseFloat(ways[0][0][0])
-                        ;
-
-                        for (i = 0; i < ways.length; i++){
-                            for (j = 0; j < ways[i].length - 1; j++){
-                                features.push(
-                                    new Feature({
-                                        name: i + ':' + j,
-                                        geometry: new LineString(
-                                            [
-                                                fromLonLat(ways[i][j]),
-                                                fromLonLat(ways[i][j + 1])
-                                            ]
-                                        )
-                                    })
-                                )
-                            }
-                        }
-                        i--;
-                        lat = (lat + parseFloat(ways[i][j][1])) / 2;
-                        lon = (lon + parseFloat(ways[i][j][0])) / 2;
-
-                        if (this.highwayLayer != null) this.map.removeLayer(this.highwayLayer)
-                        if (this.milestoneLayer != null) this.map.removeLayer(this.milestoneLayer)
-
-                        this.highwayLayer = new VectorLayer({
-                            source: new VectorSource({
-                                features: features
-                            }),
-                            style: this.styleLayer
-                        })
-
-                        this.map.addLayer(this.highwayLayer)
-
-                        features = [];
-                        milestones.forEach(function (el) {
-                            features.push(new Feature({
-                                name: el.n,
-                                type: 'geoMarker',
-                                geometry: new Point(fromLonLat(el.p))
-                            }))
-                        })
-
-                        this.milestoneLayer = new VectorLayer({
-                            source: new VectorSource({
-                                features: features
-                            }),
-                            style: this.styleMilestone
-                        })
-                        this.map.addLayer(this.milestoneLayer)
-
-
-                        this.view.setCenter(fromLonLat([lon, lat]))
-                    })
-            },
+            }
         },
         mounted() {
             const thisComponent = this;
@@ -246,10 +179,11 @@
                 }
                 displayFeatureInfo(map.getEventPixel(evt.originalEvent));
             });
-
+            /*
             map.on('click', function(evt) {
                 displayFeatureInfo(evt.pixel);
             });
+             */
             this.map = map;
         }
     }

@@ -2,7 +2,7 @@
     <div id="map-filter" class="row">
       <div class="col-2">
         <select class="form-control" @change="highwaySelect">
-          <option v-for="(highway, index) in highways" :key="index" :value="highway">{{ highway }}</option>
+          <option v-for="(highway, index) in highways" :key="index" :value="highway.id">{{ highway.name }}</option>
         </select>
       </div>
       <!--<div class="col-2">
