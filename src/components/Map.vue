@@ -1,6 +1,6 @@
 <template>
   <div class="row">
-    <div id="map" class="col-12">
+    <div id="map" v-bind:class="mapClassObj" class="col-12">
       <tooltip :vals="tooltipData" v-show="tooltipShow" />
     </div>
   </div>
@@ -26,23 +26,55 @@
         components: {Tooltip},
         data: function() {
             return {
-                map: null,
-                view: null,
-                highwayLayer: null,
-                milestoneLayer: null,
-                pointsLayer: null,
-                styleLayer: null,
-                styleMilestone: null,
-                tooltipData: {
-                    title: '',
-                    message: '',
-                    top: 200,
-                    left: 100,
-                },
-                tooltipShow: false,
+              map: null,
+              view: null,
+              sourceHighway: new VectorSource(),
+              sourceMillestone: new VectorSource(),
+              sourceSelectedRoad: new VectorSource(),
+              tooltipData: {
+                  title: '',
+                  message: '',
+                  top: 200,
+                  left: 100,
+              },
+              tooltipShow: false,
+              mapClassObj: {
+                'indicate-road': false
+              }
             }
         },
         methods: {
+            styles: function (type){
+              if (type == 'millestone'){
+                return new Style({
+                  image: new CircleStyle({
+                    radius: 7,
+                    fill: new Fill({color: 'black'}),
+                    stroke: new Stroke({
+                      color: 'white', width: 2
+                    })
+                  })
+                })
+              }else if (type == 'highway'){
+                return new Style({
+                  stroke: new Stroke({
+                    color: '#666666',
+                    width: 4
+                  })
+                })
+              }else if (type == 'selectedRoad'){
+                return new Style({
+                  image: new CircleStyle({
+                    radius: 7,
+                    fill: new Fill({color: 'white'}),
+                    stroke: new Stroke({
+                      color: 'red', width: 3
+                    })
+                  })
+                })
+              }
+
+            },
             viewMilestonesLayer : function (milestones){
               let features = [];
               milestones.forEach(function (el) {
@@ -54,14 +86,8 @@
                 }))
               })
 
-              if (this.milestoneLayer != null) this.map.removeLayer(this.milestoneLayer)
-              this.milestoneLayer = new VectorLayer({
-                source: new VectorSource({
-                  features: features
-                }),
-                style: this.styleMilestone
-              })
-              this.map.addLayer(this.milestoneLayer)
+              this.sourceMillestone.clear();
+              this.sourceMillestone.addFeatures(features)
             },
             viewHighwayLayer: function (highwayData, points){
               let features = [],
@@ -90,16 +116,8 @@
               lat = (lat + parseFloat(points[i].nodes[j][1])) / 2;
               lon = (lon + parseFloat(points[i].nodes[j][0])) / 2;
 
-              if (this.highwayLayer != null) this.map.removeLayer(this.highwayLayer)
-
-              this.highwayLayer = new VectorLayer({
-                source: new VectorSource({
-                  features: features
-                }),
-                style: this.styleLayer
-              })
-
-              this.map.addLayer(this.highwayLayer)
+              this.sourceHighway.clear()
+              this.sourceHighway.addFeatures(features)
               this.view.setCenter(fromLonLat([lon, lat]))
             },
             filter: function (data){
@@ -121,23 +139,7 @@
             }
         },
         mounted() {
-            const thisComponent = this;
-            this.styleLayer = new Style({
-                stroke: new Stroke({
-                    color: '#666666',
-                    width: 4
-                })
-            })
-
-            this.styleMilestone = new Style({
-                image: new CircleStyle({
-                    radius: 7,
-                    fill: new Fill({color: 'black'}),
-                    stroke: new Stroke({
-                        color: 'white', width: 2
-                    })
-                })
-            })
+            const $this = this;
 
             this.view = new View({
                 center: fromLonLat([28.2, 54]),
@@ -147,11 +149,19 @@
             let map = new Map({
                 target: 'map',
                 layers: [
-                    new TileLayer({
-                        source: new XYZ({
-                            url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                        })
-                    })
+                  new TileLayer({
+                      source: new XYZ({
+                          url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                      })
+                  }),
+                  new VectorLayer({
+                    source: this.sourceHighway,
+                    style: this.styles('highway')
+                  }),
+                  new VectorLayer({
+                    source: this.sourceMillestone,
+                    style: this.styles('millestone')
+                  })
                 ],
                 view: this.view
             });
@@ -161,23 +171,30 @@
                     return feature;
                 });
                 if (feature) {
-                    thisComponent.tooltipData = {
-                        title: feature.get('title'),
-                        message: feature.get('name'),
-                        left: pixel[0],
-                        top: pixel[1] - 30
-                    }
-                    thisComponent.tooltipShow = true
+                  $this.tooltipData = {
+                      title: feature.get('title'),
+                      message: feature.get('name'),
+                      left: pixel[0],
+                      top: pixel[1] - 30
+                  }
+                  $this.tooltipShow = true
                 }else{
-                    thisComponent.tooltipShow = false
+                  $this.tooltipShow = false
                 }
             };
 
+            let mouseCursorType = function (pixel){
+              $this.mapClassObj["indicate-road"] = map.forEachFeatureAtPixel(pixel, function(feature) {
+                return feature.get('type') == 'road'
+              });
+            }
+
             map.on('pointermove', function(evt) {
-                if (evt.dragging) {
-                    return;
-                }
-                displayFeatureInfo(map.getEventPixel(evt.originalEvent));
+              if (evt.dragging) {
+                  return;
+              }
+              displayFeatureInfo(map.getEventPixel(evt.originalEvent));
+              mouseCursorType(map.getEventPixel(evt.originalEvent));
             });
             /*
             map.on('click', function(evt) {
@@ -193,6 +210,10 @@
     #map {
         height: 800px;
         position: relative;
+    }
+
+    #map.indicate-road{
+      cursor: cell;
     }
 
 </style>
