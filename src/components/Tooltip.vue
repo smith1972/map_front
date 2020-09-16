@@ -99,5 +99,10 @@
         font-size: 20px;
     }
 
+    #tooltip .view .text .coordinate{
+      font-size: 14px;
+      color: blue;
+    }
+
 
 </style>
