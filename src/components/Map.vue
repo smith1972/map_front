@@ -20,6 +20,7 @@
     import Feature from 'ol/Feature';
     import Tooltip from "./Tooltip";
     import $ from "jquery";
+    import {getLength} from 'ol/sphere';
 
     export default {
         name: 'Map',
@@ -43,7 +44,8 @@
               tooltipShow: false,
               mapClassObj: {
                 'indicate-road': false
-              }
+              },
+              selectedRoadLength: 0
             }
         },
         methods: {
@@ -91,7 +93,7 @@
                 features.push(new Feature({
                   id: el.n,
                   name: el.n + ' км',
-                  type: 'millestone',
+                  type: 'milestone',
                   geometry: new Point(fromLonLat(el.p))
                 }))
               })
@@ -131,8 +133,15 @@
               this.sources.road.clear()
               this.sources.selectedRoad.clear()
               this.sources.selectedPointOnRoad.clear()
+              this.selectedRoadLength = 0
               this.sources.road.addFeatures(features)
               this.view.setCenter(fromLonLat([lon, lat]))
+            },
+            sendedSectionRoad: function (data){
+              console.log(data)
+              this.sources.selectedRoad.clear()
+              this.sources.selectedPointOnRoad.clear()
+              this.selectedRoadLength = 0
             },
             viewSelectedRoad: function (pixel){
               let features = this.sources.selectedPointOnRoad.getFeatures();
@@ -164,6 +173,7 @@
               this.drawSelectedRoad(point1, point2)
             },
             drawSelectedRoad: function (point1, point2){
+              let i
               this.sources.selectedRoad.clear();
               if (point1.id == point2.id){
                 this.sources.selectedRoad.addFeature(new Feature({
@@ -183,23 +193,32 @@
                 point2 = point1
                 point1 = point
               }
+
               let coordinates = roadFeatures[point1.id].getGeometry().getCoordinates()
-              this.sources.selectedRoad.addFeature(new Feature({
-                type: 'selectedRoad',
-                geometry: new LineString([point1.coordinates, coordinates[1]])
-              }))
-              let i
+              let polyline = []
+              polyline.push([point1.coordinates, coordinates[1]])
               for (i = point1.id + 1;i < point2.id; i++){
-                this.sources.selectedRoad.addFeature(new Feature({
-                  type: 'selectedRoad',
-                  geometry: new LineString(roadFeatures[i].getGeometry().getCoordinates())
-                }))
+                polyline.push(roadFeatures[i].getGeometry().getCoordinates())
               }
               coordinates = roadFeatures[point2.id].getGeometry().getCoordinates()
-              this.sources.selectedRoad.addFeature(new Feature({
-                type: 'selectedRoad',
-                geometry: new LineString([coordinates[0], point2.coordinates])
-              }))
+              polyline.push([coordinates[0], point2.coordinates])
+
+              for (i = 0; i < polyline.length; i++){
+                this.sources.selectedRoad.addFeature(new Feature({
+                  type: 'selectedRoad',
+                  geometry: new LineString(polyline[i])
+                }))
+              }
+              this.getSelectedRoadLength();
+            },
+            getSelectedRoadLength: function (){
+              let $this = this,
+                  lines = this.sources.selectedRoad.getFeatures()
+              $this.selectedRoadLength = 0
+              lines.forEach(function (line) {
+                $this.selectedRoadLength += getLength(line.getGeometry())
+              })
+              $this.selectedRoadLength = Math.round($this.selectedRoadLength * 100) / 100
             },
             selectedPointOnRoad: function (pixel){
               if (!this.mapClassObj["indicate-road"]) return
@@ -219,6 +238,12 @@
               })
               sFeature.setId(id)
               this.sources.selectedPointOnRoad.addFeature(sFeature)
+              if (id == 2){
+                this.$emit('showSendSectionRoad', {
+                  length: this.selectedRoadLength
+                })
+                this.tooltipShow = false
+              }
             },
             filter: function (data){
               let $this = this;
@@ -288,11 +313,14 @@
 
             let displayFeatureInfo = function(pixel) {
                 let feature = map.forEachFeatureAtPixel(pixel, function(feature) {
-                    if (feature.get('type') == 'road') return feature;
+                    if (feature.get('type') == 'road' || feature.get('type') == 'milestone') return feature;
                 });
                 if (feature) {
                   let coordinate = toLonLat(map.getCoordinateFromPixel(pixel))
                   let message = feature.get('name') + '<br><span style="font-size: 14px; color: yellow">' + coordinate[0] + '<br>' + coordinate[1] + '</span>'
+                  if ($this.mapClassObj["indicate-road"] && $this.selectedRoadLength > 0) {
+                    message += '<br><span style="font-size: 16px; color: yellow">' + $this.selectedRoadLength + ' м</span>'
+                  }
                   $this.tooltipData = {
                       title: feature.get('title'),
                       message: message,

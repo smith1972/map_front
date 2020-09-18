@@ -1,19 +1,28 @@
 <template>
-  <div class="container">
-    <div id="app">
-      <MapFilter @filterOut="mapFilter" @buttonClick="buttonClick" />
-      <Map ref="Map"></Map>
+  <div id="app">
+    <Header/>
+    <div class="container">
+      <MapFilter @filterOut="mapFilter" />
+      <Map ref="Map" @showSendSectionRoad="showSendSectionRoad"></Map>
     </div>
+    <Footer/>
+    <SendSectionRoad ref="SendSectionRoad" @sendSectionRoad="sendSectionRoad" />
   </div>
 </template>
 
 <script>
+import Header from './components/page/Header'
+import Footer from "@/components/page/Footer";
 import MapFilter from './components/MapFilter.vue'
 import Map from './components/Map.vue'
+import SendSectionRoad from "@/components/modal/SendSectionRoad";
 
 export default {
   name: 'App',
   components: {
+    SendSectionRoad,
+    Footer,
+    Header,
     MapFilter,
     Map
   },
@@ -21,8 +30,11 @@ export default {
     mapFilter: function (data) {
       this.$refs.Map.filter(data)
     },
-    buttonClick: function (data) {
-      this.$refs.Map.pointers(data)
+    showSendSectionRoad: function (data){
+      this.$refs.SendSectionRoad.show(data)
+    },
+    sendSectionRoad: function (data) {
+      this.$refs.Map.sendedSectionRoad(data)
     }
   }
 }
@@ -35,9 +47,12 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+}
+
+#app .container{
+  width: 90%;
+  max-width: unset;
 }
 
 </style>

@@ -14,5 +14,8 @@ module.exports = {
             title: 'Редактирование объектов',
             chunks: ['chunk-vendors', 'chunk-common', 'editACP']
         },
+    },
+    css: {
+        requireModuleExtension: false
     }
 }
