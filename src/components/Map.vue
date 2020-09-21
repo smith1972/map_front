@@ -269,8 +269,8 @@
               }).done(function (data) {
 
                 $this.viewRoadLayer(data.data.highway, data.data.road)
-                $this.viewMilestonesLayer(data.data.milestones)
-
+                //$this.viewMilestonesLayer(data.data.milestones)
+                $this.drawMilestonePoints()
 
               }).fail(function (data) {
                 console.log('Oшибка получения данных: ' + data);
@@ -280,17 +280,41 @@
             viewAddr: function (data){
               this.view.setCenter(fromLonLat([data.addr.lon, data.addr.lat]))
             },
-            getMilestonePoints: function (){
-              let roadFeatures = this.sources.road.getFeatures();
+            drawMilestonePoints: function (){
+              const DEGREES_IN_KM = 0.009;
+              let roadFeatures = this.sources.road.getFeatures(),
+                k = 0,
+                l = 1000,
+                length = 0,
+                points = []
+              ;
               roadFeatures.sort(function (a, b){
                 if (a.getId() < b.getId()) return -1
                 return 1
               })
-              let line = roadFeatures[0].getGeometry()
-              if (line instanceof LineString){
-                line.getFlatMidpoint()
+              this.sources.millestone.clear()
+              let point = roadFeatures[0].getGeometry().getCoordinates()[0]
+              points.push({
+                p: toLonLat(point),
+                k: 0
+              })
+              for (let i = 0; i < roadFeatures.length; i++){
+                length = Math.round(getLength(roadFeatures[0].getGeometry()) * 100) / 100
+                if (length < l){
+                  l - l - length
+                  continue
+                }
+                k++
               }
-              console.log(line.getVertices())
+            },
+            getPointOnLine: function (p1, p2, l){
+              let dLat = p2[1] - p1[1],
+                dLon = p2[0] - p1[0],
+                k = l / Math.sqrt(Math.pow(dLat, 2) + Math.pow(dLon, 2)),
+                p = [];
+              p[1] = p1[1] + dLat * k;
+              p[0] = p1[0] + dLon * k;
+              return p;
             }
         },
         mounted() {
