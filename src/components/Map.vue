@@ -16,7 +16,7 @@
     import Point from 'ol/geom/Point';
     import VectorLayer from 'ol/layer/Vector';
     import VectorSource from 'ol/source/Vector';
-    import {Stroke, Style, Circle as CircleStyle, Fill} from 'ol/style';
+    import {Stroke, Style, Circle as CircleStyle, Fill, Text} from 'ol/style';
     import Feature from 'ol/Feature';
     import Tooltip from "./Tooltip";
     import $ from "jquery";
@@ -84,6 +84,21 @@
                     width: 6
                   })
                 })
+              }else if (type == 'label'){
+                return  new Style({
+                  text: new Text({
+                    font: '14px Calibri,sans-serif',
+                    overflow: true,
+                    fill: new Fill({
+                      color: 'blue',
+                    }),
+                    stroke: new Stroke({
+                      color: '#fff',
+                      width: 3,
+                    }),
+                  }),
+                });
+
               }
 
             },
@@ -262,16 +277,20 @@
               });
 
             },
-            lineLength: function (coord1, coord2){
-              const r = 6371,
-                  pi = 3.1415926535898
-              let degreeToRad = (d) => {return d * pi / 180 }
-              let dLat = degreeToRad(coord2[1] - coord1[1])
-              let dLon = degreeToRad(coord2[0] - coord1[0])
-              let a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(degreeToRad(coord1[1])) *
-                  Math.cos(degreeToRad(coord2[1])) * Math.pow(Math.sin(dLon / 2))
-              let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-              return Math.round(r * c * 1000)
+            viewAddr: function (data){
+              this.view.setCenter(fromLonLat([data.addr.lon, data.addr.lat]))
+            },
+            getMilestonePoints: function (){
+              let roadFeatures = this.sources.road.getFeatures();
+              roadFeatures.sort(function (a, b){
+                if (a.getId() < b.getId()) return -1
+                return 1
+              })
+              let line = roadFeatures[0].getGeometry()
+              if (line instanceof LineString){
+                line.getFlatMidpoint()
+              }
+              console.log(line.getVertices())
             }
         },
         mounted() {
@@ -296,7 +315,11 @@
                   }),
                   new VectorLayer({
                     source: this.sources.millestone,
-                    style: this.styles('millestone')
+                    style: function (feature) {
+                      let labelStyle = $this.styles('label')
+                      labelStyle.getText().setText(feature.get('name'))
+                      return [$this.styles('millestone'), labelStyle]
+                    }
                   }),
                   new VectorLayer({
                     source: this.sources.selectedPointOnRoad,
