@@ -2,7 +2,7 @@
   <div id="app">
     <Header/>
     <div class="container">
-      <MapFilter @filterOut="mapFilter" @addrSelectOut="mapViewAddr" />
+      <MapFilter @filterOut="mapFilter" @addrSelectOut="mapViewAddr" @quarriesData="mapViewQuarries" />
       <Map ref="Map" @showSendSectionRoad="showSendSectionRoad"></Map>
     </div>
     <Footer/>
@@ -32,6 +32,9 @@ export default {
     },
     mapViewAddr: function (data) {
       this.$refs.Map.viewAddr(data)
+    },
+    mapViewQuarries: function (data){
+      this.$refs.Map.viewQuarriesLayer(data)
     },
     showSendSectionRoad: function (data){
       this.$refs.SendSectionRoad.show(data)

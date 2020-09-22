@@ -34,6 +34,15 @@
       </div>
     </div>
 
+    <div class="row mt-3" v-if="buttons.quarry.class == 'btn-success'">
+      <div class="col-1 text-right">Карьер</div>
+      <div class="col-2">
+        <select class="form-control" v-model="quarry"   @change="quarrySelect">
+          <option v-for="(item, index) in quarries" :key="index" :value="index">{{ item.name }}, {{ item.address }}</option>
+        </select>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -41,9 +50,9 @@
   import $ from "jquery";
   import { library } from '@fortawesome/fontawesome-svg-core'
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  import { faRoad, faMapMarkedAlt } from '@fortawesome/free-solid-svg-icons'
+  import { faRoad, faMapMarkedAlt, faSnowplow } from '@fortawesome/free-solid-svg-icons'
 
-  library.add(faRoad, faMapMarkedAlt)
+  library.add(faRoad, faMapMarkedAlt, faSnowplow)
 
   export default {
     name: 'MapFilter',
@@ -53,11 +62,13 @@
     data: function () {
       return {
         highways: [],
+        quarries: [],
         address: {
           district: [],
           list: []
         },
         district_id: 0,
+        quarry: 0,
         addrCoordinates: [],
         buttons: {
           roads: {
@@ -69,6 +80,11 @@
             icon: faMapMarkedAlt.iconName,
             class: 'btn-light',
             title: 'Поиск адреса'
+          },
+          quarry: {
+            icon: faSnowplow.iconName,
+            class: 'btn-light',
+            title: 'Карьеры'
           },
 
         }
@@ -96,6 +112,14 @@
           addr: this.addrList[e.target.value]
         })
       },
+      quarrySelect: function (e) {
+        this.$emit('addrSelectOut', {
+          addr: {
+            lat: this.quarries[e.target.value].coordinates[0][1],
+            lon: this.quarries[e.target.value].coordinates[0][0]
+          }
+        })
+      },
       buttonClick: function (source) {
         for (let button in this.buttons){
           this.buttons[button].class = button == source ? 'btn-success' : 'button-light'
@@ -120,6 +144,17 @@
         mode: "no-cors",
       }).done(function (data) {
         $this.address = data.data
+      }).fail(function (data) {
+        console.log('Oшибка получения данных: ' + data);
+      });
+
+      $.ajax(process.env.VUE_APP_API_URL + 'quarry', {
+        dataType: 'json',
+        method: 'GET',
+        mode: "no-cors",
+      }).done(function (data) {
+        $this.quarries = data.data
+        $this.$emit('quarriesData', $this.quarries)
       }).fail(function (data) {
         console.log('Oшибка получения данных: ' + data);
       });
