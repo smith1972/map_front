@@ -21,6 +21,7 @@
     import $ from "jquery";
     import {getLength} from 'ol/sphere';
     import iconPit from '@/assets/pit.png';
+    import iconPlant from '@/assets/plant.png';
     import Icon from "ol/style/Icon";
 
     export default {
@@ -36,6 +37,7 @@
                 selectedPointOnRoad: new VectorSource(),
                 selectedRoad: new VectorSource(),
                 quarries: new VectorSource(),
+                plants: new VectorSource(),
               },
               tooltipData: {
                   title: '',
@@ -103,6 +105,15 @@
                     anchorXUnits: 'fraction',
                     anchorYUnits: 'pixels',
                     src: iconPit
+                  })
+                })
+              }else if (type == 'plant'){
+                return new Style({
+                  image: new Icon({
+                    anchor: [0.5, 46],
+                    anchorXUnits: 'fraction',
+                    anchorYUnits: 'pixels',
+                    src: iconPlant
                   })
                 })
               } else if (type == 'label'){
@@ -198,6 +209,20 @@
               }
               this.sources.quarries.addFeatures(features)
             },
+          viewPlantsLayer: function (data)
+          {
+            let features = []
+            for (let i = 0; i < data.length; i++){
+              features.push(new Feature({
+                title: data[i].name,
+                name: data[i].address,
+                type: 'plant',
+                geometry: new Point(fromLonLat(data[i].coordinates)),
+                style: this.styles('plant')
+              }))
+            }
+            this.sources.plants.addFeatures(features)
+          },
             sendedSectionRoad: function (data){
               console.log(data)
               this.sources.selectedRoad.clear()
@@ -361,15 +386,18 @@
                 point1 = point2
                 length = 1000
               }
-              point2 = roadFeatures[roadFeatures.length - 1].getGeometry().getCoordinates()[1]
-              length = Math.round(getLength(new LineString([point1, point2])) * 100) / 100
-              if (length > 0){
-                points.push({
-                  p: point2,
-                  k: k + length
-                })
-              }
 
+              /*
+              let full = 0
+              roadFeatures.forEach(function (rf){
+                full += getLength(rf.getGeometry())
+              })
+              point2 = roadFeatures[roadFeatures.length - 1].getGeometry().getCoordinates()[1]
+              points.push({
+                p: point2,
+                k: Math.round(full) / 1000
+              })
+              */
               let features = [];
               for (let i = 0; i < points.length; i++){
                 features.push(new Feature({
@@ -431,6 +459,10 @@
                     style: [this.styles('quarry'), this.styles('pit')]
                   }),
                   new VectorLayer({
+                    source: this.sources.plants,
+                    style: this.styles('plant')
+                  }),
+                  new VectorLayer({
                     source: this.sources.selectedRoad,
                     style: this.styles('selectedRoad')
                   })
@@ -441,7 +473,8 @@
 
             let displayFeatureInfo = function(pixel) {
                 let feature = map.forEachFeatureAtPixel(pixel, function(feature) {
-                    if (feature.get('type') == 'road' || feature.get('type') == 'milestone' || feature.get('type') == 'quarry') return feature;
+                  const types = ['road', 'milestone', 'quarry', 'plant']
+                  if (types.includes(feature.get('type'))) return feature
                 });
                 if (feature) {
                   let coordinate = toLonLat(map.getCoordinateFromPixel(pixel))

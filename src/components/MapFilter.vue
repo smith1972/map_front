@@ -12,9 +12,14 @@
 
     <div class="row mt-3" v-if="buttons.roads.class == 'btn-success'">
       <div class="col-2">
-        <select class="form-control" @change="highwaySelect">
+        <select class="form-control" @change="highwaySelect" v-model="highway">
           <option v-for="(highway, index) in highways" :key="index" :value="highway.id">{{ highway.name }}</option>
         </select>
+      </div>
+      <div class="col-3">
+        <button type="button" class="btn btn-light" @click="rotateRoad">
+          <font-awesome-icon :icon="rotateButton.icon" :title="rotateButton.title" /> {{ rotateButton.title }}
+        </button>
       </div>
     </div>
 
@@ -43,6 +48,15 @@
       </div>
     </div>
 
+    <div class="row mt-3" v-if="buttons.plant.class == 'btn-success'">
+      <div class="col-1 text-right">Завод</div>
+      <div class="col-2">
+        <select class="form-control" v-model="plant"   @change="plantSelect">
+          <option v-for="(item, index) in plants" :key="index" :value="index">{{ item.name }}, {{ item.address }}</option>
+        </select>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -50,9 +64,9 @@
   import $ from "jquery";
   import { library } from '@fortawesome/fontawesome-svg-core'
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  import { faRoad, faMapMarkedAlt, faSnowplow } from '@fortawesome/free-solid-svg-icons'
+  import { faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt } from '@fortawesome/free-solid-svg-icons'
 
-  library.add(faRoad, faMapMarkedAlt, faSnowplow)
+  library.add(faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt)
 
   export default {
     name: 'MapFilter',
@@ -63,13 +77,21 @@
       return {
         highways: [],
         quarries: [],
+        plants: [],
         address: {
           district: [],
           list: []
         },
+        highway: 0,
         district_id: 0,
         quarry: 0,
+        plant: 0,
         addrCoordinates: [],
+        rotateButton: {
+          icon: faExchangeAlt.iconName,
+          class: 'btn-light',
+          title: 'Изменить направление'
+        },
         buttons: {
           roads: {
             icon: faRoad.iconName,
@@ -85,6 +107,11 @@
             icon: faSnowplow.iconName,
             class: 'btn-light',
             title: 'Карьеры'
+          },
+          plant: {
+            icon: faIndustry.iconName,
+            class: 'btn-light',
+            title: 'Заводы'
           },
 
         }
@@ -102,9 +129,9 @@
       }
     },
     methods: {
-      highwaySelect: function (e) {
+      highwaySelect: function () {
         this.$emit('filterOut', {
-          highway: e.target.value
+          highway: this.highway
         })
       },
       addrSelect: function (e) {
@@ -120,10 +147,41 @@
           }
         })
       },
+      plantSelect: function (e) {
+        this.$emit('addrSelectOut', {
+          addr: {
+            lat: this.plants[e.target.value].coordinates[1],
+            lon: this.plants[e.target.value].coordinates[0]
+          }
+        })
+      },
       buttonClick: function (source) {
         for (let button in this.buttons){
           this.buttons[button].class = button == source ? 'btn-success' : 'button-light'
         }
+      },
+      rotateRoad: function ()
+      {
+        if (!confirm('Изменить начало дороги ?')) {
+          return
+        }
+        let $this = this
+        $.ajax(process.env.VUE_APP_API_URL + 'road/rotate', {
+          dataType: 'json',
+          method: 'POST',
+          mode: "no-cors",
+          data: {
+            id: this.highway,
+          }
+        }).done(function (data) {
+          if (data.success == '1'){
+            $this.highwaySelect()
+          }else{
+            alert(data.message)
+          }
+        }).fail(function (data) {
+          console.log('Oшибка получения данных: ' + data);
+        });
       }
     },
     mounted() {
@@ -155,6 +213,17 @@
       }).done(function (data) {
         $this.quarries = data.data
         $this.$emit('quarriesData', $this.quarries)
+      }).fail(function (data) {
+        console.log('Oшибка получения данных: ' + data);
+      });
+
+      $.ajax(process.env.VUE_APP_API_URL + 'plant', {
+        dataType: 'json',
+        method: 'GET',
+        mode: "no-cors",
+      }).done(function (data) {
+        $this.plants = data.data
+        $this.$emit('plantsData', $this.plants)
       }).fail(function (data) {
         console.log('Oшибка получения данных: ' + data);
       });
