@@ -42,8 +42,8 @@ export default {
     showSendSectionRoad: function (data){
       this.$refs.SendSectionRoad.show(data)
     },
-    sendSectionRoad: function (data) {
-      this.$refs.Map.sendedSectionRoad(data)
+    sendSectionRoad: function () {
+      this.$refs.Map.sendedSectionRoad()
     }
   }
 }

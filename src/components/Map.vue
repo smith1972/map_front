@@ -15,14 +15,12 @@
     import {LineString, Point, Polygon} from 'ol/geom';
     import VectorLayer from 'ol/layer/Vector';
     import VectorSource from 'ol/source/Vector';
-    import {Stroke, Style, Circle as CircleStyle, Fill, Text} from 'ol/style';
     import Feature from 'ol/Feature';
     import Tooltip from "./Tooltip";
     import $ from "jquery";
     import {getLength} from 'ol/sphere';
-    import iconPit from '@/assets/pit.png';
-    import iconPlant from '@/assets/plant.png';
-    import Icon from "ol/style/Icon";
+    import MapStyles from "@/classes/MapStyles"
+    import Calculate from "@/classes/Calculate";
 
     export default {
         name: 'Map',
@@ -53,101 +51,6 @@
             }
         },
         methods: {
-            styles: function (type){
-              if (type == 'millestone'){
-                return new Style({
-                  image: new CircleStyle({
-                    radius: 7,
-                    fill: new Fill({color: 'black'}),
-                    stroke: new Stroke({
-                      color: 'white', width: 2
-                    })
-                  })
-                })
-              }else if (type == 'road'){
-                return new Style({
-                  stroke: new Stroke({
-                    color: '#666666',
-                    width: 4
-                  })
-                })
-              }else if (type == 'selectedPointOnRoad'){
-                return new Style({
-                  image: new CircleStyle({
-                    radius: 7,
-                    fill: new Fill({color: 'white'}),
-                    stroke: new Stroke({
-                      color: 'red', width: 3
-                    })
-                  })
-                })
-              }else if (type == 'selectedRoad'){
-                return new Style({
-                  stroke: new Stroke({
-                    color: 'red',
-                    width: 6
-                  })
-                })
-              }else if (type == 'quarry'){
-                return new Style({
-                  stroke: new Stroke({
-                    color: 'red',
-                    width: 2,
-                  }),
-                  fill: new Fill({
-                    color: 'yellow',
-                  })
-                })
-              }else if (type == 'pit'){
-                return new Style({
-                  image: new Icon({
-                    anchor: [0.5, 46],
-                    anchorXUnits: 'fraction',
-                    anchorYUnits: 'pixels',
-                    src: iconPit
-                  })
-                })
-              }else if (type == 'plant'){
-                return new Style({
-                  image: new Icon({
-                    anchor: [0.5, 46],
-                    anchorXUnits: 'fraction',
-                    anchorYUnits: 'pixels',
-                    src: iconPlant
-                  })
-                })
-              } else if (type == 'label'){
-                return  new Style({
-                  text: new Text({
-                    font: '14px Calibri,sans-serif',
-                    overflow: true,
-                    fill: new Fill({
-                      color: 'blue',
-                    }),
-                    stroke: new Stroke({
-                      color: '#fff',
-                      width: 3,
-                    }),
-                  }),
-                });
-
-              }
-
-            },
-            viewMilestonesLayer : function (milestones){
-              let features = [];
-              milestones.forEach(function (el) {
-                features.push(new Feature({
-                  id: el.n,
-                  name: el.n + ' км',
-                  type: 'milestone',
-                  geometry: new Point(fromLonLat(el.p))
-                }))
-              })
-
-              this.sources.millestone.clear();
-              this.sources.millestone.addFeatures(features)
-            },
             viewRoadLayer: function (highwayData, points){
               let features = [],
                   i, j,
@@ -204,25 +107,25 @@
                 features.push(new Feature({
                   type: 'pit',
                   geometry: new Point(coordinates[0]),
-                  style: this.styles('pit')
+                  style: MapStyles.pit()
                 }))
               }
               this.sources.quarries.addFeatures(features)
             },
-          viewPlantsLayer: function (data)
-          {
-            let features = []
-            for (let i = 0; i < data.length; i++){
-              features.push(new Feature({
-                title: data[i].name,
-                name: data[i].address,
-                type: 'plant',
-                geometry: new Point(fromLonLat(data[i].coordinates)),
-                style: this.styles('plant')
-              }))
-            }
-            this.sources.plants.addFeatures(features)
-          },
+            viewPlantsLayer: function (data)
+            {
+              let features = []
+              for (let i = 0; i < data.length; i++){
+                features.push(new Feature({
+                  title: data[i].name,
+                  name: data[i].address,
+                  type: 'plant',
+                  geometry: new Point(fromLonLat(data[i].coordinates)),
+                  style: MapStyles.plant()
+                }))
+              }
+              this.sources.plants.addFeatures(features)
+            },
             sendedSectionRoad: function (data){
               console.log(data)
               this.sources.selectedRoad.clear()
@@ -340,7 +243,6 @@
               }).done(function (data) {
 
                 $this.viewRoadLayer(data.data.highway, data.data.road)
-                //$this.viewMilestonesLayer(data.data.milestones)
                 $this.drawMilestonePoints()
 
               }).fail(function (data) {
@@ -352,52 +254,7 @@
               this.view.setCenter(fromLonLat([data.addr.lon, data.addr.lat]))
             },
             drawMilestonePoints: function (){
-              let roadFeatures = this.sources.road.getFeatures(),
-                k = 0,
-                length = 1000,
-                l = 0,
-                points = []
-              ;
-              roadFeatures.sort(function (a, b){
-                if (a.getId() < b.getId()) return -1
-                return 1
-              })
-              this.sources.millestone.clear()
-              let point1 = roadFeatures[0].getGeometry().getCoordinates()[0],
-                  point2;
-              points.push({
-                p: point1,
-                k: k
-              })
-              for (let i = 0; i < roadFeatures.length; i++){
-                point2 = roadFeatures[i].getGeometry().getCoordinates()[1]
-                l = Math.round(getLength(new LineString([point1, point2])) * 100) / 100
-                if (l < length){
-                  length = length - l
-                  point1 = point2
-                  continue
-                }
-                point2 = this.getPointOnLine(point1, point2, length)
-                k++
-                points.push({
-                  p: point2,
-                  k: k
-                })
-                point1 = point2
-                length = 1000
-              }
-
-              /*
-              let full = 0
-              roadFeatures.forEach(function (rf){
-                full += getLength(rf.getGeometry())
-              })
-              point2 = roadFeatures[roadFeatures.length - 1].getGeometry().getCoordinates()[1]
-              points.push({
-                p: point2,
-                k: Math.round(full) / 1000
-              })
-              */
+              let points = Calculate.getMilestonePoints(this.sources.road)
               let features = [];
               for (let i = 0; i < points.length; i++){
                 features.push(new Feature({
@@ -406,21 +263,9 @@
                   geometry: new Point(points[i].p)
                 }))
               }
+              this.sources.millestone.clear()
               this.sources.millestone.addFeatures(features)
             },
-            getPointOnLine: function (p1, p2, l){
-              const DEGREES_IN_KM = 0.0088;
-              l = l * DEGREES_IN_KM / 1000
-              p1 = toLonLat(p1)
-              p2 = toLonLat(p2)
-              let dLat = p2[1] - p1[1],
-                dLon = p2[0] - p1[0],
-                k = l / Math.sqrt(Math.pow(dLat, 2) + Math.pow(dLon, 2)),
-                p = [];
-              p[1] = p1[1] + dLat * k;
-              p[0] = p1[0] + dLon * k;
-              return fromLonLat(p);
-            }
         },
         mounted() {
             const $this = this;
@@ -440,31 +285,31 @@
                   }),
                   new VectorLayer({
                     source: this.sources.road,
-                    style: this.styles('road')
+                    style: MapStyles.road()
                   }),
                   new VectorLayer({
                     source: this.sources.millestone,
                     style: function (feature) {
-                      let labelStyle = $this.styles('label')
+                      let labelStyle = MapStyles.label()
                       labelStyle.getText().setText(feature.get('name'))
-                      return [$this.styles('millestone'), labelStyle]
+                      return [MapStyles.millestone(), labelStyle]
                     }
                   }),
                   new VectorLayer({
                     source: this.sources.selectedPointOnRoad,
-                    style: this.styles('selectedPointOnRoad')
+                    style: MapStyles.selectedPointOnRoad()
                   }),
                   new VectorLayer({
                     source: this.sources.quarries,
-                    style: [this.styles('quarry'), this.styles('pit')]
+                    style: [MapStyles.quarry(), MapStyles.pit()]
                   }),
                   new VectorLayer({
                     source: this.sources.plants,
-                    style: this.styles('plant')
+                    style: MapStyles.plant()
                   }),
                   new VectorLayer({
                     source: this.sources.selectedRoad,
-                    style: this.styles('selectedRoad')
+                    style: MapStyles.selectedRoad()
                   })
 
                 ],
