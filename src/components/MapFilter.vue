@@ -57,6 +57,15 @@
       </div>
     </div>
 
+    <div class="row mt-3" v-if="buttons.drsu.class == 'btn-success'">
+      <div class="col-1 text-right">ДРСУ</div>
+      <div class="col-2">
+        <select class="form-control" v-model="drsu"   @change="drsuSelect">
+          <option v-for="(item, index) in drsuList" :key="index" :value="index">{{ item.name }}</option>
+        </select>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -64,9 +73,10 @@
   import $ from "jquery";
   import { library } from '@fortawesome/fontawesome-svg-core'
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  import { faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt } from '@fortawesome/free-solid-svg-icons'
+  import { faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt, faBuilding } from '@fortawesome/free-solid-svg-icons'
+  import GetMapData from "@/classes/GetMapData";
 
-  library.add(faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt)
+  library.add(faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt, faBuilding)
 
   export default {
     name: 'MapFilter',
@@ -78,6 +88,7 @@
         highways: [],
         quarries: [],
         plants: [],
+        drsuList: [],
         address: {
           district: [],
           list: []
@@ -86,6 +97,7 @@
         district_id: 0,
         quarry: 0,
         plant: 0,
+        drsu: 0,
         addrCoordinates: [],
         rotateButton: {
           icon: faExchangeAlt.iconName,
@@ -113,6 +125,11 @@
             class: 'btn-light',
             title: 'Заводы'
           },
+          drsu: {
+            icon: faBuilding.iconName,
+            class: 'btn-light',
+            title: 'ДРСУ'
+          },
 
         }
       }
@@ -137,6 +154,11 @@
       addrSelect: function (e) {
         this.$emit('addrSelectOut', {
           addr: this.addrList[e.target.value]
+        })
+      },
+      drsuSelect: function (e) {
+        this.$emit('drsuSelectOut', {
+          drsu: this.drsuList[e.target.value]
         })
       },
       quarrySelect: function (e) {
@@ -185,48 +207,20 @@
       }
     },
     mounted() {
-      let $this = this
-      $.ajax(process.env.VUE_APP_API_URL + 'road/list', {
-        dataType: 'json',
-        method: 'GET',
-        mode: "no-cors",
-      }).done(function (data) {
-        $this.highways = data.data
-      }).fail(function (data) {
-        console.log('Oшибка получения данных: ' + data);
-      });
+      let $this = this,
+          getMapData = new GetMapData()
 
-      $.ajax(process.env.VUE_APP_API_URL + 'address', {
-        dataType: 'json',
-        method: 'GET',
-        mode: "no-cors",
-      }).done(function (data) {
-        $this.address = data.data
-      }).fail(function (data) {
-        console.log('Oшибка получения данных: ' + data);
-      });
-
-      $.ajax(process.env.VUE_APP_API_URL + 'quarry', {
-        dataType: 'json',
-        method: 'GET',
-        mode: "no-cors",
-      }).done(function (data) {
+      getMapData.receive('road/list', (data) => {$this.highways = data.data})
+      getMapData.receive('address', (data) => {$this.address = data.data})
+      getMapData.receive('quarry', (data) => {
         $this.quarries = data.data
         $this.$emit('quarriesData', $this.quarries)
-      }).fail(function (data) {
-        console.log('Oшибка получения данных: ' + data);
-      });
-
-      $.ajax(process.env.VUE_APP_API_URL + 'plant', {
-        dataType: 'json',
-        method: 'GET',
-        mode: "no-cors",
-      }).done(function (data) {
+      })
+      getMapData.receive('plant', (data) => {
         $this.plants = data.data
         $this.$emit('plantsData', $this.plants)
-      }).fail(function (data) {
-        console.log('Oшибка получения данных: ' + data);
-      });
+      })
+      getMapData.receive('drsu', (data) => {$this.drsuList = data.data})
 
     }
   }

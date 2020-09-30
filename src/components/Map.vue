@@ -21,6 +21,7 @@
     import {getLength} from 'ol/sphere';
     import MapStyles from "@/classes/MapStyles"
     import Calculate from "@/classes/Calculate";
+    import GetMapData from "@/classes/GetMapData";
 
     export default {
         name: 'Map',
@@ -90,7 +91,7 @@
             viewQuarriesLayer: function (data)
             {
               let features = []
-
+              this.sources.quarries.clear()
               for (let i = 0; i < data.length; i++){
                 let coordinates = []
                 data[i].coordinates.forEach(function (val){
@@ -115,6 +116,7 @@
             viewPlantsLayer: function (data)
             {
               let features = []
+              this.sources.plants.clear()
               for (let i = 0; i < data.length; i++){
                 features.push(new Feature({
                   title: data[i].name,
@@ -125,6 +127,13 @@
                 }))
               }
               this.sources.plants.addFeatures(features)
+            },
+            viewDrsu: function (data){
+              console.log(data)
+              let getMapData = new GetMapData()
+
+              getMapData.receive('quarry/drsu/' + data.drsu.id, (data) => {this.viewQuarriesLayer(data.data)})
+              getMapData.receive('plant/drsu/' + data.drsu.id, (data) => {this.viewPlantsLayer(data.data)})
             },
             sendedSectionRoad: function (data){
               console.log(data)
