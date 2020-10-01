@@ -4,6 +4,57 @@ import {LineString} from "ol/geom";
 
 class Calculate {
 
+    static getRoadSection(highwayData, points)
+    {
+        if (highwayData.from == undefined) return []
+        if (highwayData.to == undefined || highwayData.to == 0) return []
+
+        let nodes = []
+        for (let i = 0; i < points.length; i++){
+            points[i].nodes.forEach((v) => nodes.push(fromLonLat(v)))
+        }
+
+        let length = highwayData.from * 1000,
+            startPoint = nodes[0],
+            startIndex = 0
+
+        let findPoint = nodes.some((point, i) => {
+            let l = Math.round(getLength(new LineString([startPoint, point])) * 100) / 100
+            if (length > l){
+                length -= l
+                startPoint = point
+                return false
+            }
+            startPoint = this.getPointOnLine(startPoint, point, length)
+            startIndex = i
+            return true
+        })
+        if (!findPoint) return []
+
+        let section = [startPoint]
+        length = (highwayData.to - highwayData.from) * 1000
+        nodes.some((point, i) => {
+            if (i < startIndex) return false
+
+            let l = Math.round(getLength(new LineString([startPoint, point])) * 100) / 100
+            if (length > l){
+                length -= l
+                startPoint = point
+                section.push(point)
+                return false
+            }
+
+            startPoint = this.getPointOnLine(startPoint, point, length)
+            section.push(startPoint)
+            return true
+        })
+
+        nodes = []
+        section.forEach((v) => nodes.push(toLonLat(v)))
+
+        return nodes
+    }
+
     static getMilestonePoints(source){
         let roadFeatures = source.getFeatures(),
             k = 0,

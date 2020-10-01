@@ -55,7 +55,18 @@
               let features = [],
                   i, j,
                   lat = parseFloat(points[0].nodes[0][1]),
-                  lon = parseFloat(points[0].nodes[0][0])
+                  lon = parseFloat(points[0].nodes[0][0]),
+                  section = Calculate.getRoadSection(highwayData, points)
+
+              if (section.length > 0){
+                let name = points[0].tags.name
+                points = [{
+                  nodes: section,
+                  tags: {
+                    name: name
+                  }
+                }]
+              }
 
               let cnt = 0;
               for (i = 0; i < points.length; i++){
@@ -270,6 +281,7 @@
             },
             viewAddr: function (data){
               this.view.setCenter(fromLonLat([data.addr.lon, data.addr.lat]))
+              this.view.setZoom(14)
             },
             drawMilestonePoints: function (){
               let points = Calculate.getMilestonePoints(this.sources.road)
