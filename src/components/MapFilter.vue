@@ -181,6 +181,12 @@
         for (let button in this.buttons){
           this.buttons[button].class = button == source ? 'btn-success' : 'button-light'
         }
+        if (source == 'quarry'){
+          this.$emit('quarriesData', this.quarries)
+        }
+        if (source == 'plant'){
+          this.$emit('plantsData', this.plants)
+        }
       },
       rotateRoad: function ()
       {
@@ -207,20 +213,19 @@
       }
     },
     mounted() {
-      let $this = this,
-          getMapData = new GetMapData()
+      let getMapData = new GetMapData()
 
-      getMapData.receive('road/list', (data) => {$this.highways = data.data})
-      getMapData.receive('address', (data) => {$this.address = data.data})
+      getMapData.receive('road/list', (data) => {this.highways = data.data})
+      getMapData.receive('address', (data) => {this.address = data.data})
       getMapData.receive('quarry', (data) => {
-        $this.quarries = data.data
-        $this.$emit('quarriesData', $this.quarries)
+        this.quarries = data.data
+        this.$emit('quarriesData', this.quarries)
       })
       getMapData.receive('plant', (data) => {
-        $this.plants = data.data
-        $this.$emit('plantsData', $this.plants)
+        this.plants = data.data
+        this.$emit('plantsData', this.plants)
       })
-      getMapData.receive('drsu', (data) => {$this.drsuList = data.data})
+      getMapData.receive('drsu', (data) => {this.drsuList = data.data})
 
     }
   }

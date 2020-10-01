@@ -63,14 +63,31 @@ class Calculate {
         let dLat = p2[1] - p1[1],
             dLon = p2[0] - p1[0],
             k = ld / Math.sqrt(Math.pow(dLat, 2) + Math.pow(dLon, 2)),
-            p = [];
+            p = [],
+            delta = 0,
+            ad = 0,
+            dk = 0.025
 
         let i = 0
-        while (Math.abs(length - l) > 10){
+        while (Math.abs(length - l) > 5){
             p[1] = p1[1] + dLat * k;
             p[0] = p1[0] + dLon * k;
             l = Math.round(getLength(new LineString([fromLonLat(p1), fromLonLat(p)])) * 100) / 100
-            k += length - l > 0 ? 0.025 : -0.025
+            delta = length - l
+            ad = Math.abs(delta)
+            if (ad > 100){
+                dk = 0.2
+            }else if (ad > 50){
+                dk = 0.1
+            }else if (ad > 30){
+                dk = 0.05
+            }else if (ad > 10){
+                dk = 0.025
+            }else {
+                dk = 0.01
+            }
+            k += delta > 0 ? dk : -1 * dk
+            //console.log(i + '  d: ' + delta + '  k: ' + k + '  dk: ' + dk)
             i++
             if (i > 20) break
         }

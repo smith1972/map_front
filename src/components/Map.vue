@@ -17,7 +17,6 @@
     import VectorSource from 'ol/source/Vector';
     import Feature from 'ol/Feature';
     import Tooltip from "./Tooltip";
-    import $ from "jquery";
     import {getLength} from 'ol/sphere';
     import MapStyles from "@/classes/MapStyles"
     import Calculate from "@/classes/Calculate";
@@ -52,7 +51,7 @@
             }
         },
         methods: {
-            viewRoadLayer: function (highwayData, points){
+            viewRoadLayer: function (highwayData, points, many){
               let features = [],
                   i, j,
                   lat = parseFloat(points[0].nodes[0][1]),
@@ -81,17 +80,20 @@
               lat = (lat + parseFloat(points[i].nodes[j][1])) / 2;
               lon = (lon + parseFloat(points[i].nodes[j][0])) / 2;
 
-              this.sources.road.clear()
-              this.sources.selectedRoad.clear()
-              this.sources.selectedPointOnRoad.clear()
-              this.selectedRoadLength = 0
+              if (!many){
+                this.sources.road.clear()
+                this.sources.selectedRoad.clear()
+                this.sources.selectedPointOnRoad.clear()
+                this.selectedRoadLength = 0
+                this.view.setCenter(fromLonLat([lon, lat]))
+              }
               this.sources.road.addFeatures(features)
-              this.view.setCenter(fromLonLat([lon, lat]))
             },
             viewQuarriesLayer: function (data)
             {
               let features = []
               this.sources.quarries.clear()
+              if (data == undefined) return
               for (let i = 0; i < data.length; i++){
                 let coordinates = []
                 data[i].coordinates.forEach(function (val){
@@ -117,6 +119,7 @@
             {
               let features = []
               this.sources.plants.clear()
+              if (data == undefined) return
               for (let i = 0; i < data.length; i++){
                 features.push(new Feature({
                   title: data[i].name,
@@ -134,6 +137,20 @@
 
               getMapData.receive('quarry/drsu/' + data.drsu.id, (data) => {this.viewQuarriesLayer(data.data)})
               getMapData.receive('plant/drsu/' + data.drsu.id, (data) => {this.viewPlantsLayer(data.data)})
+              getMapData.receive('road/drsu/' + data.drsu.id, (data) => {
+
+                this.sources.road.clear()
+                this.sources.selectedRoad.clear()
+                this.sources.selectedPointOnRoad.clear()
+                this.selectedRoadLength = 0
+
+                if (data.data == undefined) return
+
+                data.data.forEach((road) => {
+                  this.viewRoadLayer(road.highway, road.road, true)
+                })
+              })
+              this.view.setZoom(8)
             },
             sendedSectionRoad: function (data){
               console.log(data)
@@ -244,20 +261,12 @@
               }
             },
             filter: function (data){
-              let $this = this;
-              $.ajax(process.env.VUE_APP_API_URL + 'road/' + data.highway + '/points', {
-                dataType: 'json',
-                method: 'GET',
-                mode: "no-cors",
-              }).done(function (data) {
+              let getMapData = new GetMapData()
 
-                $this.viewRoadLayer(data.data.highway, data.data.road)
-                $this.drawMilestonePoints()
-
-              }).fail(function (data) {
-                console.log('Oшибка получения данных: ' + data);
-              });
-
+              getMapData.receive('road/' + data.highway + '/points', (data) => {
+                this.viewRoadLayer(data.data.highway, data.data.road, false)
+                this.drawMilestonePoints()
+              })
             },
             viewAddr: function (data){
               this.view.setCenter(fromLonLat([data.addr.lon, data.addr.lat]))
