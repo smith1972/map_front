@@ -11,7 +11,9 @@ class Calculate {
 
         let nodes = []
         for (let i = 0; i < points.length; i++){
-            points[i].nodes.forEach((v) => nodes.push(fromLonLat(v)))
+            if (!points[i].is_second){
+                points[i].nodes.forEach((v) => nodes.push(fromLonLat(v)))
+            }
         }
 
         let length = highwayData.from * 1000,
@@ -55,13 +57,16 @@ class Calculate {
         return nodes
     }
 
-    static getMilestonePoints(source){
+    static getMilestonePoints(source, start){
         let roadFeatures = source.getFeatures(),
-            k = 0,
-            length = 1000,
+            k = Math.trunc(start / 1000),
+            length = (1000 * (k + 1)) - start,
             l = 0,
             points = []
         ;
+        roadFeatures = roadFeatures.filter((a) => {
+            return !a.get('is_second')
+        })
         roadFeatures.sort(function (a, b){
             if (a.getId() < b.getId()) return -1
             return 1

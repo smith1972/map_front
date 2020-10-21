@@ -62,6 +62,7 @@
                 let name = points[0].tags.name
                 points = [{
                   nodes: section,
+                  is_second: false,
                   tags: {
                     name: name
                   }
@@ -75,6 +76,7 @@
                     title: highwayData.name,
                     name: points[i].tags.name,
                     type: 'road',
+                    is_second: points[i].is_second,
                     geometry: new LineString(
                         [
                           fromLonLat(points[i].nodes[j]),
@@ -276,15 +278,15 @@
 
               getMapData.receive('road/' + data.highway + '/points', (data) => {
                 this.viewRoadLayer(data.data.highway, data.data.road, false)
-                this.drawMilestonePoints()
+                this.drawMilestonePoints(data.data.highway.start)
               })
             },
             viewAddr: function (data){
               this.view.setCenter(fromLonLat([data.addr.lon, data.addr.lat]))
               this.view.setZoom(14)
             },
-            drawMilestonePoints: function (){
-              let points = Calculate.getMilestonePoints(this.sources.road)
+            drawMilestonePoints: function (start){
+              let points = Calculate.getMilestonePoints(this.sources.road, start)
               let features = [];
               for (let i = 0; i < points.length; i++){
                 features.push(new Feature({

@@ -21,6 +21,11 @@
           <font-awesome-icon :icon="rotateButton.icon" :title="rotateButton.title" /> {{ rotateButton.title }}
         </button>
       </div>
+      <div class="col-3">
+        <button type="button" class="btn btn-light" @click="startRoad">
+          <font-awesome-icon :icon="startRoadButton.icon" :title="startRoadButton.title" /> {{ startRoadButton.title }}
+        </button>
+      </div>
     </div>
 
 
@@ -73,10 +78,10 @@
   import $ from "jquery";
   import { library } from '@fortawesome/fontawesome-svg-core'
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  import { faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt, faBuilding } from '@fortawesome/free-solid-svg-icons'
+  import { faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt, faBuilding, faBookmark } from '@fortawesome/free-solid-svg-icons'
   import GetMapData from "@/classes/GetMapData";
 
-  library.add(faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt, faBuilding)
+  library.add(faRoad, faMapMarkedAlt, faSnowplow, faIndustry, faExchangeAlt, faBuilding, faBookmark)
 
   export default {
     name: 'MapFilter',
@@ -103,6 +108,11 @@
           icon: faExchangeAlt.iconName,
           class: 'btn-light',
           title: 'Изменить направление'
+        },
+        startRoadButton: {
+          icon: faBookmark.iconName,
+          class: 'btn-light',
+          title: 'Начало дороги'
         },
         buttons: {
           roads: {
@@ -210,7 +220,39 @@
         }).fail(function (data) {
           console.log('Oшибка получения данных: ' + data);
         });
+      },
+      startRoad: function ()
+      {
+        let meter = prompt('Введите дистанцию в метрах, с которой начинается отображение дороги:', '0');
+        if (meter == null) {
+          return
+        }
+        meter = parseInt(meter.trim())
+        if (isNaN(meter)){
+          alert('Некорректное число.')
+          return
+        }
+
+        let $this = this
+        $.ajax(process.env.VUE_APP_API_URL + 'road/start', {
+          dataType: 'json',
+          method: 'POST',
+          mode: "no-cors",
+          data: {
+            id: this.highway,
+            start: meter
+          }
+        }).done(function (data) {
+          if (data.success == '1'){
+            $this.highwaySelect()
+          }else{
+            alert(data.message)
+          }
+        }).fail(function (data) {
+          console.log('Oшибка получения данных: ' + data);
+        });
       }
+
     },
     mounted() {
       let getMapData = new GetMapData()
