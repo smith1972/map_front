@@ -2,7 +2,8 @@
   <div id="app">
     <Header/>
     <div class="container">
-      <MapFilter @filterOut="mapFilter" @addrSelectOut="mapViewAddr" @quarriesData="mapViewQuarries"  @plantsData="mapViewPlants" @drsuSelectOut="mapViewDrsu" />
+      <MapFilter @filterOut="mapFilter" @addrSelectOut="mapViewAddr" @quarriesData="mapViewQuarries"
+                 @plantsData="mapViewPlants" @drsuSelectOut="mapViewDrsu" @pointsData="mapViewPoints"  />
       <Map ref="Map" @showSendSectionRoad="showSendSectionRoad"></Map>
     </div>
     <Footer/>
@@ -41,6 +42,9 @@ export default {
     },
     mapViewPlants: function (data){
       this.$refs.Map.viewPlantsLayer(data)
+    },
+    mapViewPoints: function (data){
+      this.$refs.Map.viewPointsLayer(data)
     },
     showSendSectionRoad: function (data){
       this.$refs.SendSectionRoad.show(data)

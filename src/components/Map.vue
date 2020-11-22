@@ -36,6 +36,7 @@
                 selectedRoad: new VectorSource(),
                 quarries: new VectorSource(),
                 plants: new VectorSource(),
+                points: new VectorSource(),
               },
               tooltipData: {
                   title: '',
@@ -144,6 +145,22 @@
               }
               this.sources.plants.addFeatures(features)
             },
+          viewPointsLayer: function (data)
+          {
+            let features = []
+            this.sources.points.clear()
+            if (data == undefined) return
+            for (let i = 0; i < data.length; i++){
+              features.push(new Feature({
+                title: data[i].name,
+                name: data[i].node,
+                type: 'point',
+                geometry: new Point(fromLonLat(data[i].coordinates)),
+                style: MapStyles.selectedPointOnRoad()
+              }))
+            }
+            this.sources.points.addFeatures(features)
+          },
             viewDrsu: function (data){
               console.log(data)
               let getMapData = new GetMapData()
@@ -340,6 +357,10 @@
                     style: MapStyles.plant()
                   }),
                   new VectorLayer({
+                    source: this.sources.points,
+                    style: MapStyles.selectedPointOnRoad()
+                  }),
+                  new VectorLayer({
                     source: this.sources.selectedRoad,
                     style: MapStyles.selectedRoad()
                   })
@@ -350,7 +371,7 @@
 
             let displayFeatureInfo = function(pixel) {
                 let feature = map.forEachFeatureAtPixel(pixel, function(feature) {
-                  const types = ['road', 'milestone', 'quarry', 'plant']
+                  const types = ['road', 'milestone', 'quarry', 'plant', 'point']
                   if (types.includes(feature.get('type'))) return feature
                 });
                 if (feature) {

@@ -26,6 +26,11 @@
           <font-awesome-icon :icon="startRoadButton.icon" :title="startRoadButton.title" /> {{ startRoadButton.title }}
         </button>
       </div>
+      <div class="col-3">
+        <button type="button" class="btn btn-light" @click="shortestWay">
+          Кратчайший путь
+        </button>
+      </div>
     </div>
 
 
@@ -251,6 +256,12 @@
         }).fail(function (data) {
           console.log('Oшибка получения данных: ' + data);
         });
+      },
+      shortestWay: function (){
+        let getMapData = new GetMapData()
+        getMapData.receive('graph', (data) => {
+          this.$emit('pointsData', data.data)
+        })
       }
 
     },
