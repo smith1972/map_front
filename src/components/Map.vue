@@ -161,6 +161,29 @@
             }
             this.sources.points.addFeatures(features)
           },
+          viewEdges: function (edges){
+            let features = []
+
+            edges.forEach(function (edge){
+              let feature = new Feature({
+                title: edge.id,
+                type: 'road',
+                geometry: new LineString(
+                    [
+                      fromLonLat(edge.nd1),
+                      fromLonLat(edge.nd2)
+                    ]
+                )
+              })
+              features.push(feature)
+            })
+
+            this.sources.road.clear()
+            this.sources.selectedRoad.clear()
+            this.sources.selectedPointOnRoad.clear()
+            this.selectedRoadLength = 0
+            this.sources.road.addFeatures(features)
+          },
             viewDrsu: function (data){
               console.log(data)
               let getMapData = new GetMapData()

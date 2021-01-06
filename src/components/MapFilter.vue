@@ -26,7 +26,7 @@
           <font-awesome-icon :icon="startRoadButton.icon" :title="startRoadButton.title" /> {{ startRoadButton.title }}
         </button>
       </div>
-      <div class="col-3">
+      <div class="col-3" v-if="false">
         <button type="button" class="btn btn-light" @click="shortestWay">
           Кратчайший путь
         </button>
