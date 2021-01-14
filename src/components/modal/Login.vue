@@ -7,9 +7,14 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label v-bind:for="formId + 'Name'">УНП</label>
-            <input v-model.trim="formData.unp" type="text" class="form-control" v-bind:id="formId + 'Unp'" v-bind:aria-describedby="formId + 'UnpHelp'">
-            <small v-bind:id="formId + 'UnpHelp'" class="form-text text-muted">Введите УНП организации</small>
+            <label v-bind:for="formId + 'Login'">Логин</label>
+            <input v-model.trim="formData.login" type="text" class="form-control" v-bind:id="formId + 'Login'" v-bind:aria-describedby="formId + 'LoginHelp'">
+            <small v-bind:id="formId + 'LoginHelp'" class="form-text text-muted">Введите свой логин</small>
+          </div>
+          <div class="form-group">
+            <label v-bind:for="formId + 'Password'">Пароль</label>
+            <input v-model.trim="formData.password" type="password" class="form-control" v-bind:id="formId + 'Password'" v-bind:aria-describedby="formId + 'PasswordHelp'">
+            <small v-bind:id="formId + 'PasswordHelp'" class="form-text text-muted">Введите пароль</small>
             <div class="error">{{ error }}</div>
           </div>
         </div>
@@ -33,7 +38,8 @@ export default {
     return {
       formId: 'loginForm',
       formData: {
-        unp: ''
+        login: '',
+        password: ''
       },
       error: ''
     }
@@ -45,9 +51,7 @@ export default {
         dataType: 'json',
         method: 'POST',
         mode: "no-cors",
-        data: {
-          unp: this.formData.unp,
-        }
+        data: this.formData
       }).done(function (data) {
         $this.checkLoginResponse(data)
       }).fail(function (data) {
